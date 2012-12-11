@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>GoogleAnalyticsTracker.WindowsPhone</id>
+    <version>1.2.4706.23117</version>
+    <title>GoogleAnalyticsTracker.WindowsPhone</title>
+    <authors>Maarten Balliauw</authors>
+    <owners>Maarten Balliauw</owners>
+    <licenseUrl>http://github.com/maartenba/GoogleAnalyticsTracker/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>http://github.com/maartenba/GoogleAnalyticsTracker</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>GoogleAnalyticsTracker was created to have a means of tracking specific URL's directly from C#. For example, it enables you to log API calls to Google Analytics.</description>
+    <summary>GoogleAnalyticsTracker was created to have a means of tracking specific URL's directly from C#. For example, it enables you to log API calls to Google Analytics.</summary>
+    <copyright>Copyright 2012 Maarten Balliauw</copyright>
+    <tags>google analytics ga wp7 windows phone windowsphone api rest client tracker stats statistics mango</tags>
+    <dependencies>
+      <dependency id="System.Threading.Tasks" version="2.1.2" />
+    </dependencies>
+  </metadata>
+</package>

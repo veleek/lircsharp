@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>System.Threading.Tasks</id>
+    <version>2.1.2</version>
+    <title>Task Parallel Library for Silverlight</title>
+    <authors>Robert McLaws, Jrmie "Garuma" Laval</authors>
+    <owners>Robert McLaws, Jrmie "Garuma" Laval</owners>
+    <licenseUrl>http://www.mono-project.com/Licensing</licenseUrl>
+    <projectUrl>http://robertmclaws.com/nuget-packages/system-threading-tasks-for-silverlight</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>This package is a port of the Mono version of the *complete* Task Parallel Library (not a subset) to all Silverlight platforms, including Windows Phone 7.X. This version contains more classes (and is namespace compatible with the BCL) compared to the PortableTPL project. This project supercedes the TaskParallelLibrary.WP7 package, and is licensed under the same licenses as the rest of the Mono framework.</description>
+    <summary>This package is a port of the Mono version of the *complete* Task Parallel Library (not a subset) to SL3, SL4, SL5, WP7, and WP7.1.</summary>
+    <copyright>2008-2011 Novell Corp. &amp; Xamarian, LLC.</copyright>
+  </metadata>
+</package>

@@ -1,0 +1,1 @@
+The source files in this folder are included in the various LircSharp projects and built for the appropriate consumers.

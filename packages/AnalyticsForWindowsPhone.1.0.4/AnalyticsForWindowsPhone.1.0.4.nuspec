@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>AnalyticsForWindowsPhone</id>
+    <version>1.0.4</version>
+    <title>Analytics for Windows Phone</title>
+    <authors>Slobodan Stipic</authors>
+    <owners>Slobodan Stipic</owners>
+    <projectUrl>http://bit.ly/analyticsforwp7</projectUrl>
+    <iconUrl>https://sites.google.com/site/slobo802/WP7Logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Analytics for Windows Phone provides mechanism for instrumenting an app with Google Analytics. You can track events, user device information, app version, and WP OS version. It also provides realtime tracking so you know how many people are using your app at this moment. 
+Currently only Google Analytics is supported. Other analytics frameworks will be supported in the future.</description>
+    <releaseNotes>Added project Url and icon logo.</releaseNotes>
+    <copyright>Slobodan Stipic</copyright>
+    <language>es-US</language>
+    <tags>windows "windows phone" phone mobile analytics "google analytics" tracking wp7 statistics</tags>
+    <dependencies>
+      <dependency id="GoogleAnalyticsTracker.WindowsPhone" version="1.2.4618.18732" />
+    </dependencies>
+  </metadata>
+</package>

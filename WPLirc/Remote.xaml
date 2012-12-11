@@ -1,0 +1,35 @@
+﻿<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      d:DesignWidth="480" d:DesignHeight="720"
+      mc:Ignorable="d"
+      Background="{StaticResource PhoneBackgroundBrush}">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="80" />
+    </Grid.ColumnDefinitions>
+
+    <Button Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Content="TV" Tag="Panasonic_N2QAYB000220 PowerOn,Onkyo_RC-707M PowerOn,Panasonic_N2QAYB000220 HDMI1,SLEEP 3000,Panasonic_N2QAYB000220 HDMI1" />
+    <Button Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Content="Xbox" Tag="Panasonic_N2QAYB000220 PowerOn,Onkyo_RC-707M PowerOn,Panasonic_N2QAYB000220 Component1,SLEEP 3000,Panasonic_N2QAYB000220 Component1"/>
+
+    <Button Grid.Row="0" Grid.Column="4" Content="/\" Tag="Onkyo_RC-707M VolUp"/>
+    <Button Grid.Row="1" Grid.Column="4" Content="\/" Tag="Onkyo_RC-707M VolDown"/>
+
+    <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Tag="Panasonic_N2QAYB000220 PowerOff, Onkyo_RC-707M PowerOff">
+        <TextBlock Text="Off">
+            <TextBlock.RenderTransform>
+                <RotateTransform Angle="-90" CenterX="20" CenterY="20"/>
+            </TextBlock.RenderTransform>
+        </TextBlock>
+    </Button>
+</Grid>
