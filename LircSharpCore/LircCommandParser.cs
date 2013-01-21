@@ -26,12 +26,12 @@ namespace Ben.LircSharp
 
         public event EventHandler<LircCommandEventArgs> CommandParsed;
 
-        public void Parse(byte[] data, int offset, int length)
+        public void Parse(byte[] data, int index, int count)
         {
             // Just serialize any data parsing
             lock (parseLock)
             {
-                for (int i = offset; i < length; i++)
+                for (int i = index; i < count; i++)
                 {
                     byte d = data[i];
                     if (d == (byte)'\n')

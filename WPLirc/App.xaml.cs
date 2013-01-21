@@ -104,17 +104,15 @@ namespace Ben.LircSharp.Phone
         // This code will not execute when the application is first launched
         private void Application_Activated(object sender, ActivatedEventArgs e)
         {
-            // Ensure that application state is restored appropriately
-            if (!App.ViewModel.IsDataLoaded)
-            {
-                App.ViewModel.LoadData();
-            }
+            App.ViewModel.Connect();
         }
 
         // Code to execute when the application is deactivated (sent to background)
         // This code will not execute when the application is closing
         private void Application_Deactivated(object sender, DeactivatedEventArgs e)
         {
+            Settings.Save();
+            App.ViewModel.Disconnect();
         }
 
         // Code to execute when the application is closing (eg, user hit Back)
@@ -122,6 +120,8 @@ namespace Ben.LircSharp.Phone
         private void Application_Closing(object sender, ClosingEventArgs e)
         {
             // Ensure that required application state is persisted here.
+            Settings.Save();
+            App.ViewModel.Disconnect();
         }
 
         // Code to execute if a navigation fails
@@ -157,7 +157,7 @@ namespace Ben.LircSharp.Phone
         {
             BeginInvoke(() =>
             {
-                MainPage.LogLines.Add(message);
+                App.ViewModel.LogLines.Add(message);
             });
         }
 

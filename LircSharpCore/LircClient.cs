@@ -1,25 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 //using NLog;
 
 namespace Ben.LircSharp
 {
-    public abstract class LircClient
+    public abstract class LircClient : IDisposable
     {
         //protected static Logger logger = LogManager.GetLogger("LircClient");
 
         private LircCommandParser parser = new LircCommandParser();
-        public Dictionary<string, ObservableCollection<string>> RemoteCommands { get; set; }
-        private string host;
-        private int port;
+        private object connectLock = new object();
+        
+        protected bool disposed = false;
 
+        public event EventHandler Connected;
+        public event EventHandler<LircMessageEventArgs> Message;
         public event EventHandler<LircCommandEventArgs> CommandCompleted;
+        public event EventHandler<LircErrorEventArgs> Error;
+
+        public Dictionary<string, List<string>> RemoteCommands { get; set; }
+
+        public static List<LircClient> Clients = new List<LircClient>();
 
         public LircClient()
         {
             parser = new LircCommandParser();
             parser.CommandParsed += new EventHandler<LircCommandEventArgs>(parser_CommandParsed);
+
+            Clients.Add(this);
         }
 
         public LircClient(string host, int port) : this()
@@ -27,32 +37,70 @@ namespace Ben.LircSharp
             this.Connect(host, port);
         }
 
+        public string Host { get; protected set; }
+        public int Port { get; protected set; }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            this.disposed = true;
+        }
+
         public void Connect()
         {
-            if (string.IsNullOrWhiteSpace(this.host))
+            if (string.IsNullOrWhiteSpace(this.Host))
             {
                 throw new InvalidOperationException("You must set the host before attempting to connect");
             }
 
-            if (port == 0)
+            if (this.Port == 0)
             {
                 throw new InvalidOperationException("You must set the port before attempting to connect");
             }
 
-            this.Connect(this.host, this.port);
+            this.Connect(this.Host, this.Port);
         }
 
         public void Connect(string host, int port)
         {
-            this.host = host;
-            this.port = port;
+            // Check if someone is already connecting
+            if (Monitor.TryEnter(connectLock))
+            {
+                try
+                {
 
-            ConnectInternal(host, port);
+                    this.Host = host;
+                    this.Port = port;
+
+                    ConnectInternal();
+                }
+                finally
+                {
+                    Monitor.Exit(connectLock);
+                }
+            }
+        }
+
+        public void Reconnect()
+        {
+            Disconnect();
+
+            Connect();
+        }
+
+        public void Disconnect()
+        {
+            this.DisconnectInternal();
         }
 
         public void SendCommand(string remote, string command)
         {
-            SendCommand(string.Format("SEND_ONCE {0} {1}\n", remote, command));
+            this.SendCommand(string.Format("SEND_ONCE {0} {1}\n", remote, command));
         }
 
         public void SendCommand(string command)
@@ -62,79 +110,109 @@ namespace Ben.LircSharp
                 command += '\n';
             }
 
-            // TODO: Add logging
-            //logger.Info("SendCommand: " + command.Trim());
             SendCommandInternal(command);
         }
 
-        public ObservableCollection<string> GetCommands(string remote)
+        public List<string> GetCommands(string remote)
         {
+            if (remote == null)
+            {
+                return null;
+            }
+
             if (!RemoteCommands.ContainsKey(remote))
             {
                 throw new ArgumentException("You must specify a valid remote name");
             }
 
             var commands = RemoteCommands[remote];
-            if (commands.Count == 0)
+            //if (commands.Count == 0)
             {
-                SendCommand("LIST " + remote);
+            //    SendCommand("LIST " + remote);
             }
 
-            return commands;
+            return commands ?? new List<string>();
         }
 
         protected abstract void SendCommandInternal(string command);        
 
-        protected abstract void ConnectInternal(string host, int port);
+        protected abstract void ConnectInternal();
+
+        protected abstract void DisconnectInternal();
 
         protected void ParseData(byte[] buffer, int index, int count)
         {
             try
             {
+                //OnError(System.Text.Encoding.UTF8.GetString(buffer, index, count));
                 parser.Parse(buffer, index, count);
             }
             catch (LircParsingException e)
             {
-                // TODO: Add logging
-                //logger.WarnException("Exception while parsing data", e);
+                OnError("Exception while parsing data", e);
             }
         }
 
         private void parser_CommandParsed(object sender, LircCommandEventArgs e)
         {
-            if (e.Command.Command.StartsWith("LIST"))
+            switch (e.Command.Command)
             {
-                if (e.Command.Command.Length == 4)
-                {
-                    RemoteCommands = new Dictionary<string, ObservableCollection<string>>();
-                    foreach (var remote in e.Command.Data)
+                case "ListRemotes":
+                    var listRemotes = e.Command as LircListRemotesCommand;
+                    RemoteCommands = new Dictionary<string, List<string>>();
+                    foreach (var remote in listRemotes.Remotes)
                     {
-                        RemoteCommands.Add(remote, new ObservableCollection<string>());
+                        RemoteCommands[remote] = null;
                         SendCommand("LIST " + remote);
                     }
-                }
-                else
-                {
-                    var index = e.Command.Command.IndexOf(' ');
-                    var remote = e.Command.Command.Substring(index + 1).Trim();
-
-                    //Deployment.Current.Dispatcher.BeginInvoke(() =>
-                    {
-                        foreach (var command in e.Command.Data)
-                        {
-                            RemoteCommands[remote].Add(command);
-                        }
-                    }
-                    //);
-                }
+                    break;
+                case "ListRemote":
+                    var listRemote = e.Command as LircListRemoteCommand;
+                    RemoteCommands[listRemote.Remote] = listRemote.Data;
+                    break;
+                case "Version":
+                default:
+                    break;
             }
-            else
+
+            OnCommandCompleted(e.Command);
+        }
+
+        protected void OnConnected()
+        {
+            var connectedHandler = Connected;
+            if (connectedHandler != null)
             {
-                // TODO: Add logging
-                //logger.Trace(e.Command.Command + " - " + e.Command.Succeeded);
+                connectedHandler(this, EventArgs.Empty);
             }
+        }
 
-            CommandCompleted(this, e);
+        protected void OnError(string message)
+        {
+            OnError(message, null);
+        }
+
+        protected void OnError(string message, Exception exception)
+        {
+            var errorHandler = Error;
+            if (errorHandler != null)
+            {
+                errorHandler(this, new LircErrorEventArgs(message, exception));
+            }
+        }
+
+        protected void OnCommandCompleted(LircCommand command)
+        {
+            var commandCompletedHandler = CommandCompleted;
+            if (commandCompletedHandler != null)
+            {
+                commandCompletedHandler(this, new LircCommandEventArgs(command));
+            }
+        }
+
+        protected void OnMessage(string message)
+        {
+            Message(this, new LircMessageEventArgs(message));
         }
     }
 }

@@ -6,16 +6,21 @@ namespace Ben.LircSharp
     {
         public static LircCommand Create(string command)
         {
-            int spaceIndex = command.IndexOf(' ');
-            if (spaceIndex != -1)
-            {
+            string[] commandTokens= command.Split(' ');
 
-            }
-
-            switch (spaceIndex == -1 ? command : command.Substring(0, spaceIndex))
+            switch (commandTokens[0])
             {
                 case "VERSION":
+                    return new LircVersionCommand();
                 case "LIST":
+                    if (commandTokens.Length == 1)
+                    {
+                        return new LircListRemotesCommand();
+                    }
+                    else
+                    {
+                        return new LircListRemoteCommand(commandTokens[1]);
+                    }
                 case "SIGHUP":
                 case "SEND_ONCE":
                 case "SEND_START":

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -14,24 +15,79 @@ namespace Ben.LircSharp
         private SocketAsyncEventArgs writeArgs;
 
         private Queue<string> writeCommandQueue = new Queue<string>();
-        private ManualResetEvent writeEvent = new ManualResetEvent(true);
+        private ManualResetEvent connectedEvent = new ManualResetEvent(false);
+        private ManualResetEvent disposeEvent = new ManualResetEvent(false);
+        private AutoResetEvent writeEvent = new AutoResetEvent(false);
+        private Timer reconnectTimer;
+        private object reconnectLock = new object();
 
         protected byte[] readBuffer = new byte[1024];
         protected byte[] writeBuffer = new byte[1024];
 
-        public LircSocketClient(string host, int port) : base(host, port) { }
+        public static List<Socket> ClientSockets = LircClient.Clients.OfType<LircSocketClient>().Select(c => c.socket).ToList();
 
-        protected override void ConnectInternal(string host, int port)
+        public LircSocketClient() : base() 
         {
+            SetupReadWriteThreads();
+        }
+
+        public LircSocketClient(string host, int port) : base(host, port) 
+        {
+            SetupReadWriteThreads();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // Kill the reader/writer threads
+                    disposeEvent.Set();
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private void SetupReadWriteThreads()
+        {
+            ThreadPool.QueueUserWorkItem(DoRead, null);
+            ThreadPool.QueueUserWorkItem(DoWrite, null);
+        }
+
+        protected override void ConnectInternal()
+        {
+            if (socket != null)
+            {
+                throw new InvalidOperationException("You must call disconnect before calling connect.");
+            }
+
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             var connectArgs = new SocketAsyncEventArgs();
-            connectArgs.RemoteEndPoint = new DnsEndPoint(host, port);
+            connectArgs.RemoteEndPoint = new DnsEndPoint(this.Host, this.Port);
             connectArgs.Completed += connect_Completed;
 
             if (!socket.ConnectAsync(connectArgs))
             {
                 connect_Completed(this, connectArgs);
+            }
+        }
+
+        protected override void DisconnectInternal()
+        {
+            if (socket != null)
+            {
+                if (socket.Connected)
+                {
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                }
+
+                connectedEvent.Reset();
+                socket.Dispose();
+                socket = null;
             }
         }
 
@@ -43,8 +99,14 @@ namespace Ben.LircSharp
             writeEvent.Set();
         }
 
-        void connect_Completed(object sender, SocketAsyncEventArgs e)
+        private void connect_Completed(object sender, SocketAsyncEventArgs e)
         {
+            if (e.SocketError != SocketError.Success)
+            {
+                OnError("Unable to connect: " + e.SocketError);
+                return;
+            }
+
             readArgs = new SocketAsyncEventArgs();
             readArgs.SetBuffer(readBuffer, 0, readBuffer.Length);
             readArgs.Completed += socketRead_Completed;
@@ -53,15 +115,94 @@ namespace Ben.LircSharp
             writeArgs.SetBuffer(writeBuffer, 0, writeBuffer.Length);
             writeArgs.Completed += socketWrite_Completed;
 
-            ThreadPool.QueueUserWorkItem(DoRead);
-            ThreadPool.QueueUserWorkItem(DoWrite);
+            connectedEvent.Set();
+
+            OnConnected();
+        }
+
+        private void AttemptReconnectIfRequired()
+        {
+            Socket s = this.socket;
+
+            if (s == null)
+            {
+                // We've disconnected, no automatic reconnect should be attempted
+                return;
+            }
+
+            if (!s.Connected)
+            {
+                // If we're not connected then let everyone know
+                connectedEvent.Reset();
+
+                lock (reconnectLock)
+                {
+                    // Check to see if we should queue up a reconnect timer
+                    if (reconnectTimer == null)
+                    {
+                        OnMessage("Setting up for reconnect...");
+                        // Sleep 30 seconds and try again
+                        reconnectTimer = new Timer(state =>
+                        {
+
+                            try
+                            {
+                                // If the socket is null, a disconnect was performed
+                                // and we should not just blindly reconnect
+                                if (socket != null && !socket.Connected)
+                                {
+                                    OnMessage("Reconnecting...");
+                                    Reconnect();
+                                }
+                            }
+                            finally
+                            {
+                                reconnectTimer = null;
+                            }
+                        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
+                    }
+                }
+            }
         }
 
         private void DoRead(object state)
         {
-            if (!socket.ReceiveAsync(readArgs))
+            // If we're not connected, wait until we are
+            int signaledHandle = WaitHandle.WaitAny(new WaitHandle[] { connectedEvent, disposeEvent });
+
+            if (signaledHandle == 1)
             {
-                socketRead_Completed(this, readArgs);
+                // The object has been disposed, stop reading
+                return;
+            }
+
+            // If the socket is null that means we've disconnected.
+            if (socket == null)
+            {
+                // Stop performing reads, they will be restarted when a new connection is made
+                //return;
+            }
+
+            try
+            {
+                if (socket == null || !socket.Connected)
+                {
+                    // We got disconnected somehow, just queue up a read
+                    ThreadPool.QueueUserWorkItem(DoRead, state);
+                    return;
+                }
+
+                if (!socket.ReceiveAsync(readArgs))
+                {
+                    // This means the read finished syncronously so parse the data
+                    socketRead_Completed(this, readArgs);
+                }
+            }
+            catch (Exception e)
+            {
+                OnError("Exception reading.", e);
+                // There was an error starting up the read, so let's queue up another
+                ThreadPool.QueueUserWorkItem(DoRead, state);
             }
         }
 
@@ -69,34 +210,33 @@ namespace Ben.LircSharp
         {
             switch (e.SocketError)
             {
-                case SocketError.NotConnected:
-                    Connect();
-                    break;
+                // This occurs when reconnecting and when tombstoning
                 case SocketError.OperationAborted:
-                    // This occurs when the app has been tombstoned
-                    Connect();
+                // These can occur when the server is down or connecting somewhere non-existant
+                case SocketError.ConnectionAborted:
+                case SocketError.ConnectionRefused:
+                case SocketError.ConnectionReset:
+                case SocketError.NotConnected:
+                    AttemptReconnectIfRequired();
                     break;
                 case SocketError.Shutdown:
-                    // Stop writing commands
+                    // Nothing to do, we're disconnecting, maybe we just shouldn't attempt to reconnect unless asked.
                     break;
                 case SocketError.TryAgain:
-                    // Okay
-                    socket.ReceiveAsync(readArgs);
+                    // Okay, nothing to do here either
                     break;
                 case SocketError.Success:
                     // Success, parse the message
                     ParseData(e.Buffer, e.Offset, e.BytesTransferred);
-                    // Then kick of another read
-                    DoRead(e.UserToken);
                     break;
                 default:
                     // log the error
-                    // TODO: Add logging
-                    //logger.Error("Unexpected reading error: " + e.SocketError);
-                    // And kick of another read
-                    DoRead(e.UserToken);
+                    OnError(string.Format("Error while reading: {0}, Operation: {1}", e.SocketError, e.LastOperation));
                     break;
             }
+
+            // Then kick of another read
+            ThreadPool.QueueUserWorkItem(DoRead, e.UserToken);
         }
 
         private void DoWrite(object state)
@@ -105,13 +245,26 @@ namespace Ben.LircSharp
 
             do
             {
+                // Make sure we're in a state that we can do something
+                // If we're not connected, wait until we are
+                int signaledHandle = WaitHandle.WaitAny(new WaitHandle[] { connectedEvent, disposeEvent });
+
+                if (signaledHandle == 1)
+                {
+                    // The object has been disposed, stop writing
+                    return;
+                }          
+
                 if (writeCommandQueue.Count <= 0)
                 {
-                    do
+                    // Either wait until we get a write or we're being disposed
+                    signaledHandle = WaitHandle.WaitAny(new WaitHandle[] { writeEvent, disposeEvent });
+
+                    if (signaledHandle == 1)
                     {
-                        writeEvent.WaitOne();
-                    }
-                    while (writeCommandQueue.Count <= 0);
+                        // The object has been disposed, stop reading
+                        return;
+                    }          
                 }
 
                 string command = null;
@@ -124,50 +277,69 @@ namespace Ben.LircSharp
                     // Ignore, it just means the queue is empty
                 }
 
+                // If for some reason we didn't get a command, just start waiting again
                 if (command == null)
                 {
                     continue;
                 }
 
+                OnMessage("Sending command " + command.Trim());
+
                 var bytesToWrite = Encoding.UTF8.GetBytes(command, 0, command.Length, writeBuffer, 0);
                 writeArgs.SetBuffer(0, bytesToWrite);
-                socket.SendAsync(writeArgs);
-                commandProcessed = true;
+                try
+                {
+                    socket.SendAsync(writeArgs);
+                    commandProcessed = true;
+                }
+                catch (Exception e)
+                {
+                    OnError("Error sending command: " + command + "\r\n" + e.Message, e);
+                }
             }
             while (!commandProcessed);
-            
         }
 
         private void socketWrite_Completed(object sender, SocketAsyncEventArgs e)
         {
             switch (e.SocketError)
             {
-                case SocketError.NotConnected:
-                    Connect();
-                    break;
+                // This occurs when reconnecting and when tombstoning
                 case SocketError.OperationAborted:
-                    // This occurs when the app has been tombstoned
-                    Connect();
+                // These can occur when the server is down or connecting somewhere non-existant
+                case SocketError.ConnectionAborted:
+                case SocketError.ConnectionRefused:
+                case SocketError.ConnectionReset:
+                case SocketError.NotConnected:
+                    AttemptReconnectIfRequired();
                     break;
                 case SocketError.Shutdown:
-                    // Stop writing commands
+                    // Nothing to do, we're disconnecting, maybe we just shouldn't attempt to reconnect unless asked.
                     break;
                 case SocketError.TryAgain:
                     // Okay
-                    socket.SendAsync(writeArgs);
+                    try
+                    {
+                        socket.SendAsync(writeArgs);
+                        // If this succeeded, then a write is pending 
+                        // and we should not queue up another one right away
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        OnError("Error trying again.", ex);
+                    }
                     break;
                 case SocketError.Success:
-                    // Success, kick of another write
-                    DoWrite(null);
                     break;
                 default:
                     // Display the error
-                    // TODO: Add logging
-                    //logger.Error("Unexpected writing error: " + e.SocketError);
-                    // And kick of another write
-                    DoWrite(null);
+                    OnError(string.Format("Error writing to socket: {0}, Operation: {1}", e.SocketError, e.LastOperation));
                     break;
             }
+
+            // Kick off another write
+            ThreadPool.QueueUserWorkItem(DoWrite, e.UserToken);
         }
     }
 }

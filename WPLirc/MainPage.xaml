@@ -9,7 +9,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
     mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="696" 
-    d:DataContext="{d:DesignData SampleData/MainViewModelSampleData.xaml}"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
     Foreground="{StaticResource PhoneForegroundBrush}"
@@ -17,25 +16,23 @@
     shell:SystemTray.IsVisible="True">
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <controls:Pivot Title="Lirc Client" SelectionChanged="Pivot_SelectionChanged">
-            <controls:PivotItem Header="basic">
+        <controls:Pivot Title="Lirc Client">
+            <controls:PivotItem Header="all" Margin="12,0">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
-                    <Button x:Name="VersionButton" Grid.Row="0" Grid.Column="1" Content="Version" Click="VersionButton_Click" />
-                    <Button x:Name="ListButton" Grid.Row="0" Grid.Column="0" Content="List" Click="ListButton_Click" />
+                    <toolkit:ListPicker x:Name="RemoteListPicker" Header="remote" ItemsSource="{Binding Remotes}" 
+                                        SelectedItem="{Binding SelectedRemote, Mode=TwoWay}" SelectionMode="Single" 
+                                        Grid.Row="0"/>
 
-                    <toolkit:ListPicker x:Name="RemoteListPicker" Header="remote" SelectionChanged="RemoteListPicker_SelectionChanged" SelectionMode="Single" Grid.Row="1" Grid.ColumnSpan="2"/>
-
-                    <toolkit:LongListSelector x:Name="CommandListPicker" Grid.Row="2" Grid.ColumnSpan="2" IsFlatList="True" toolkit:TiltEffect.IsTiltEnabled="True">
+                    <TextBlock x:Name="Status" Text="{Binding Status}" TextAlignment="Right" Style="{StaticResource PhoneTextSubtleStyle}" Grid.Row="1" VerticalAlignment="Bottom"/>
+                    
+                    <toolkit:LongListSelector x:Name="CommandListPicker" Grid.Row="1" IsFlatList="True" toolkit:TiltEffect.IsTiltEnabled="True"
+                                              ItemsSource="{Binding SelectedRemoteCommands}" Background="Transparent">
                         <toolkit:LongListSelector.GroupHeaderTemplate>
                             <DataTemplate>
                                 <Border Background="{StaticResource PhoneAccentBrush}">
@@ -46,21 +43,20 @@
                         <toolkit:LongListSelector.ItemTemplate>
                             <DataTemplate>
                                 <Border>
-                                    <TextBlock Text="{Binding}" Tap="CommandListPicker_Tap" Style="{StaticResource PhoneTextLargeStyle}" Margin="{StaticResource PhoneTouchTargetOverhang}"/>
+                                    <TextBlock Text="{Binding}" Tap="CommandListPicker_Tap" Style="{StaticResource PhoneTextExtraLargeStyle}" Margin="{StaticResource PhoneTouchTargetOverhang}"/>
                                 </Border>
                             </DataTemplate>
                         </toolkit:LongListSelector.ItemTemplate>
                     </toolkit:LongListSelector>
-                    <!--<Button x:Name="SendButton" Content="Send" Click="SendButton_Click" />-->
                 </Grid>
             </controls:PivotItem>
  
-            <controls:PivotItem Header="remote" x:Name="RemotePivot"> 
+            <controls:PivotItem Header="custom" x:Name="RemotePivot" Content="{Binding RemotePanel}" Margin="12,0"> 
                 
             </controls:PivotItem>
             
-            <controls:PivotItem Header="log">
-                <ListBox x:Name="LogMessages" />
+            <controls:PivotItem Header="log" Margin="12,0">
+                <ListBox x:Name="LogMessages" ItemsSource="{Binding LogLines}" />
             </controls:PivotItem>
         </controls:Pivot>
     </Grid>
@@ -68,9 +64,11 @@
     <phone:PhoneApplicationPage.ApplicationBar>
         <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True">
             <shell:ApplicationBarIconButton IconUri="/Images/appbar.settings.png" Text="Settings" Click="Settings_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Images/appbar.refresh.png" Text="Refresh" Click="Refresh_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Toolkit.Content/ApplicationBar.Cancel.png" Text="Clear" Click="ClearLog_Click"/>
             <shell:ApplicationBar.MenuItems>
-                <shell:ApplicationBarMenuItem Text="MenuItem 1"/>
-                <shell:ApplicationBarMenuItem Text="MenuItem 2"/>
+                <shell:ApplicationBarMenuItem Text="Reload Remote Layout" Click="ReloadLayout_Click"/>
+                <!--<shell:ApplicationBarMenuItem Text="MenuItem 2"/>-->
             </shell:ApplicationBar.MenuItems>
         </shell:ApplicationBar>
     </phone:PhoneApplicationPage.ApplicationBar>

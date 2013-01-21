@@ -1,0 +1,75 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="Ben.LircSharp.Phone.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d" d:DesignHeight="696" d:DesignWidth="480"
+    shell:SystemTray.IsVisible="True">
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!--TitlePanel contains the name of the application and page title-->
+        <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,12">
+            <TextBlock x:Name="ApplicationTitle" Text="LIRC#Remote by Ben Randall" Style="{StaticResource PhoneTextNormalStyle}"/>
+            <TextBlock x:Name="PageTitle" Text="settings" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
+        </StackPanel>
+
+        <!--ContentPanel - place additional content here-->
+        <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
+            <Grid.Resources>
+                <ControlTemplate x:Key="HyperlinkButtonTemplate" TargetType="Button">
+                    <TextBlock Text="{TemplateBinding Content}" 
+                           TextWrapping="Wrap"
+                           TextDecorations="Underline"
+                           Margin="{TemplateBinding Margin}"
+                           Padding="{TemplateBinding Padding}"
+                           Style="{StaticResource PhoneTextNormalStyle}" 
+                           Foreground="{StaticResource PhoneAccentBrush}"/>
+                </ControlTemplate>
+            </Grid.Resources>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Server Host Name or IP:" Style="{StaticResource PhoneTextSubtleStyle}" />
+                <toolkit:PhoneTextBox x:Name="HostTextBox" Hint="Host Name or IP" ActionIcon="/Images/actionicon.cancel.png" ActionIconTapped="HostTextBox_ActionIconTapped"  LostFocus="HostTextBox_LostFocus" GotFocus="HostTextBox_GotFocus"/>
+                <TextBlock Text="Server Port:" Style="{StaticResource PhoneTextSubtleStyle}" />
+                <toolkit:PhoneTextBox x:Name="PortTextBox" Hint="Port" InputScope="Number" Grid.Row="1" ActionIcon="/Images/actionicon.cancel.png" ActionIconTapped="PortTextBox_ActionIconTapped" LostFocus="PortTextBox_LostFocus" GotFocus="PortTextBox_GotFocus"/>
+                <TextBlock Text="Url of XAML file that describes custom remote:" Style="{StaticResource PhoneTextSubtleStyle}" />
+                <toolkit:PhoneTextBox x:Name="RemoteLayoutUrlTextBox" Hint="Remote Layout URL" Grid.Row="1" ActionIcon="/Images/actionicon.cancel.png" ActionIconTapped="RemoteLayoutUrlTextBox_ActionIconTapped" LostFocus="RemoteLayoutUrlTextBox_LostFocus" GotFocus="RemoteLayoutUrlTextBox_GotFocus"/>
+                <TextBlock Margin="12,0" TextWrapping="Wrap">To create a custom remote, build a XAML layout file with a Panel (usually a Grid) that contains your Buttons.  Set the Tag attribute on each button, use a comma separated list of remote commands and/or SLEEP &lt;ms&gt; actions to perform.
+                    <LineBreak />For more information see Lirc# on CodePlex
+                </TextBlock>
+                <Button Content="http://lircsharp.codeplex.com" Template="{StaticResource HyperlinkButtonTemplate}" Padding="{StaticResource PhoneTouchTargetOverhang}" Click="WebsiteButton_Click" Tag="http://lircsharp.codeplex.com"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+ 
+    <phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True">
+            <shell:ApplicationBarIconButton IconUri="/Toolkit.Content/ApplicationBar.Check.png" Text="OK" Click="Ok_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Toolkit.Content/ApplicationBar.Cancel.png" Text="Cancel" Click="Cancel_Click"/>
+            <!--<shell:ApplicationBar.MenuItems>
+                <shell:ApplicationBarMenuItem Text="MenuItem 1"/>
+                <shell:ApplicationBarMenuItem Text="MenuItem 2"/>
+            </shell:ApplicationBar.MenuItems>-->
+        </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>
+
+</phone:PhoneApplicationPage>

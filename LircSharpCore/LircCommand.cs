@@ -21,6 +21,38 @@ namespace Ben.LircSharp
 
     public class LircVersionCommand : LircCommand
     {
-        public string Version { get; set; }
+        public LircVersionCommand()
+        {
+            this.Command = "Version";
+        }
+
+        public string Version
+        {
+            get { return Data[0]; }
+        }
+    }
+
+    public class LircListRemotesCommand : LircCommand
+    {
+        public LircListRemotesCommand()
+        {
+            this.Command = "ListRemotes";
+        }
+
+        public List<string> Remotes
+        {
+            get { return this.Data; }
+        }
+    }
+
+    public class LircListRemoteCommand : LircCommand
+    {
+        public LircListRemoteCommand(string remote)
+        {
+            this.Command = "ListRemote";
+            this.Remote = remote;
+        }
+
+        public string Remote { get; set; }
     }
 }

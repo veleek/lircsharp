@@ -12,4 +12,13 @@ namespace Ben.LircSharp
         }
     }
 
+    public class LircMessageEventArgs : EventArgs
+    {
+        public string Message { get; private set; }
+
+        public LircMessageEventArgs(string message)
+        {
+            this.Message = message;
+        }
+    }
 }

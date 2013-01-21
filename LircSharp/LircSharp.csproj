@@ -55,6 +55,9 @@
     <Compile Include="..\LircSharpCore\LircCommandParser.cs">
       <Link>LircCommandParser.cs</Link>
     </Compile>
+    <Compile Include="..\LircSharpCore\LircErrorEventArgs.cs">
+      <Link>LircErrorEventArgs.cs</Link>
+    </Compile>
     <Compile Include="..\LircSharpCore\LircParsingException.cs">
       <Link>LircParsingException.cs</Link>
     </Compile>
