@@ -6,11 +6,11 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Lirc#Remote")]
+[assembly: AssemblyTitle("Lirc Remote")]
 [assembly: AssemblyDescription("Simulate an IR remote with your phone by connecting to any LIRC server")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Ben Corp.")]
-[assembly: AssemblyProduct("Lirc#Remote")]
+[assembly: AssemblyProduct("Lirc Remote")]
 [assembly: AssemblyCopyright("Copyright ©  2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
