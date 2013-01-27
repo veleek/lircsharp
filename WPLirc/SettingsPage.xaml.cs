@@ -71,7 +71,7 @@ namespace Ben.LircSharp.Phone
             {
                 remoteLayoutUrl = null;
             }
-            else if (!Uri.TryCreate(text, UriKind.Absolute, out remoteLayoutUrl))
+            else if (!Uri.TryCreate(text, UriKind.Absolute, out remoteLayoutUrl) && !Uri.TryCreate("http://" + text, UriKind.Absolute, out remoteLayoutUrl))
             {
                 RemoteLayoutUrlTextBox.Focus();
                 RemoteLayoutUrlTextBox.SelectAll();

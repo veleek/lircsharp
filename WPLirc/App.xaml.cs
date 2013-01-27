@@ -158,6 +158,7 @@ namespace Ben.LircSharp.Phone
             BeginInvoke(() =>
             {
                 App.ViewModel.LogLines.Add(message);
+                App.ViewModel.RawLog += message + "\r\n";
             });
         }
 

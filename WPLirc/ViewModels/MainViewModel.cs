@@ -17,6 +17,7 @@ namespace Ben.LircSharp.Phone
     public class MainViewModel : INotifyPropertyChanged
     {
         private static Logger logger = LogManager.GetLogger("ViewModel");
+        private string rawLog = string.Empty;
 
         public MainViewModel()
         {
@@ -47,6 +48,21 @@ namespace Ben.LircSharp.Phone
 
         public ObservableCollection<string> LogLines { get; private set; }
 
+        public string RawLog
+        {
+            get
+            {
+                return rawLog;
+            }
+            set
+            {
+                if (value != rawLog)
+                {
+                    rawLog = value;
+                    NotifyPropertyChanged("RawLog");
+                }
+            }
+        }
 
         public ObservableCollection<string> Remotes { get; private set; }
 
@@ -189,6 +205,8 @@ namespace Ben.LircSharp.Phone
             }
 
             HttpWebRequest req = WebRequest.CreateHttp(Settings.RemoteLayoutUrl);
+            req.Headers[HttpRequestHeader.IfModifiedSince] = DateTime.UtcNow.ToString("R");
+
             req.BeginGetResponse(result =>
             {
                 try

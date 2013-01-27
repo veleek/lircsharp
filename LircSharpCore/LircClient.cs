@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading;
-//using NLog;
 
 namespace Ben.LircSharp
 {
     public abstract class LircClient : IDisposable
     {
-        //protected static Logger logger = LogManager.GetLogger("LircClient");
-
         private LircCommandParser parser = new LircCommandParser();
         private object connectLock = new object();
         
@@ -53,7 +49,7 @@ namespace Ben.LircSharp
 
         public void Connect()
         {
-            if (string.IsNullOrWhiteSpace(this.Host))
+            if (string.IsNullOrEmpty(this.Host))
             {
                 throw new InvalidOperationException("You must set the host before attempting to connect");
             }
@@ -144,7 +140,6 @@ namespace Ben.LircSharp
         {
             try
             {
-                //OnError(System.Text.Encoding.UTF8.GetString(buffer, index, count));
                 parser.Parse(buffer, index, count);
             }
             catch (LircParsingException e)

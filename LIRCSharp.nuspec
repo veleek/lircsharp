@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>LIRCSharp</id>
+        <version>1.0.1</version>
+        <title>LIRC#</title>
+        <authors>Ben Randall</authors>
+        <owners>Ben Randall</owners>
+        <licenseUrl>http://lircsharp.codeplex.com/license</licenseUrl>
+        <projectUrl>http://lircsharp.codeplex.com/</projectUrl>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <description>LIRC# is a simple client library to allow a .NET application to interact with an LIRC server to control or be controlled by IR devices.</description>
+        <summary>A .NET library to interact with an LIRC server to control or be controlled by IR devices.</summary>
+        <language>en-US</language>
+        <tags>LIRC Universal Remote Control IR Infrared</tags>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System" targetFramework="" />
+            <frameworkAssembly assemblyName="System.Net" targetFramework="Silverlight4.0-WindowsPhone" />
+        </frameworkAssemblies>
+    </metadata>
+    <files>
+        <file src="lib\net40-client\LircSharp.dll" target="lib\net40-client\LircSharp.dll" />
+        <file src="lib\sl4-wp71\LircSharpPhone.dll" target="lib\sl4-wp71\LircSharpPhone.dll" />
+    </files>
+</package>

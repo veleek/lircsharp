@@ -47,6 +47,7 @@ namespace Ben.LircSharp.Phone
         private void ClearLog_Click(object sender, EventArgs e)
         {
             App.ViewModel.LogLines.Clear();
+            App.ViewModel.RawLog = string.Empty;
         }
 
         private void ReloadLayout_Click(object sender, EventArgs e)
